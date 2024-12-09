@@ -1,0 +1,105 @@
+import random
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import Application, CommandHandler, ContextTypes, CallbackQueryHandler
+import asyncio
+import nest_asyncio
+
+# Токен вашего бота
+TOKEN = '7611337918:AAGp9MAnkKnMP0gDZJobFSDj8FklHGOcDy8'
+
+# Функция для отправки сообщений
+async def send_message(update: Update, text: str, reply_markup: InlineKeyboardMarkup):
+    """Отправка сообщений с обработкой для разных типов событий."""
+    if update.callback_query:
+        try:
+            await update.callback_query.edit_message_text(text, reply_markup=reply_markup, parse_mode='Markdown')
+        except Exception as e:
+            if "Message is not modified" not in str(e):
+                raise e
+    elif update.message:
+        await update.message.reply_text(text, reply_markup=reply_markup, parse_mode='Markdown')
+
+# Главная команда /start
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Главное меню с кнопками"""
+    keyboard = [
+        [InlineKeyboardButton("🪐 Главная", callback_data='main')],
+        [InlineKeyboardButton("📚 Учебные материалы", callback_data='study')],
+        [InlineKeyboardButton("📰 Новости", callback_data='news')],
+        [InlineKeyboardButton("📈 Аналитика", callback_data='analytics')],
+        [InlineKeyboardButton("🛠️ Инструменты", callback_data='tools')],
+        [InlineKeyboardButton("❓ FAQ", callback_data='faq')],
+        [InlineKeyboardButton("👨‍🚀 О нас", callback_data='about')],
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    await send_message(update, "Добро пожаловать в космос знаний о криптоиндустрии! 🚀\nВыберите одну из команд, чтобы начать путешествие!", reply_markup)
+
+# Функции для подменю
+async def study_menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Меню Учебные материалы"""
+    keyboard = [
+        [InlineKeyboardButton("📖 Книги", callback_data='study_books')],
+        [InlineKeyboardButton("🎥 Видео", callback_data='study_videos')],
+        [InlineKeyboardButton("🖼️ Паттерны", callback_data='gallery')],
+        [InlineKeyboardButton("📄 Статьи", callback_data='articles')],
+        [InlineKeyboardButton("🔙 Назад", callback_data='main')],
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    await send_message(update, "Выберите тип учебных материалов:", reply_markup)
+
+async def news_menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Меню Новости"""
+    keyboard = [
+        [InlineKeyboardButton("🌐 Общие новости", callback_data='news_general')],
+        [InlineKeyboardButton("💹 Новости рынка", callback_data='news_market')],
+        [InlineKeyboardButton("🔙 Назад", callback_data='main')],
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    await send_message(update, "Выберите категорию новостей:", reply_markup)
+
+async def analytics_menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Меню Аналитика"""
+    keyboard = [
+        [InlineKeyboardButton("📊 Графики", callback_data='analytics_charts')],
+        [InlineKeyboardButton("📋 Отчеты", callback_data='analytics_reports')],
+        [InlineKeyboardButton("🔙 Назад", callback_data='main')],
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    await send_message(update, "Выберите тип аналитики:", reply_markup)
+
+# Обработка кнопок меню
+async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Обработка нажатия кнопок в меню"""
+    query = update.callback_query
+    await query.answer()
+
+    if query.data == 'main':
+        await start(update, context)
+    elif query.data == 'study':
+        await study_menu(update, context)
+    elif query.data == 'news':
+        await news_menu(update, context)
+    elif query.data == 'analytics':
+        await analytics_menu(update, context)
+    elif query.data == 'tools':
+        await send_message(update, "Инструменты пока недоступны.", None)
+    elif query.data == 'faq':
+        await send_message(update, "Здесь будет раздел FAQ.", None)
+    elif query.data == 'about':
+        await send_message(update, "Мы — команда энтузиастов криптоиндустрии!", None)
+
+# Основная функция для запуска бота
+async def main():
+    # Создание приложения
+    application = Application.builder().token(TOKEN).build()
+
+    # Добавление обработчиков команд и кнопок
+    application.add_handler(CommandHandler("start", start))
+    application.add_handler(CallbackQueryHandler(button))
+
+    # Запуск бота
+    await application.run_polling()
+
+if __name__ == '__main__':
+    nest_asyncio.apply()  # Подключение патча для уже работающего event loop
+    asyncio.run(main())
